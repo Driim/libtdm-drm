@@ -923,7 +923,7 @@ failed_create:
 }
 
 tdm_error
-drm_display_get_capabilitiy(tdm_backend_data *bdata, tdm_caps_display *caps)
+drm_display_get_capability(tdm_backend_data *bdata, tdm_caps_display *caps)
 {
 	RETURN_VAL_IF_FAIL(caps, TDM_ERROR_INVALID_PARAMETER);
 

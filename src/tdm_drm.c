@@ -266,7 +266,7 @@ tdm_drm_init(tdm_display *dpy, tdm_error *error)
 	LIST_INITHEAD(&drm_data->buffer_list);
 
 	memset(&drm_func_display, 0, sizeof(drm_func_display));
-	drm_func_display.display_get_capabilitiy = drm_display_get_capabilitiy;
+	drm_func_display.display_get_capability = drm_display_get_capability;
 	drm_func_display.display_get_pp_capability = drm_display_get_pp_capability;
 	drm_func_display.display_get_outputs = drm_display_get_outputs;
 	drm_func_display.display_get_fd = drm_display_get_fd;
