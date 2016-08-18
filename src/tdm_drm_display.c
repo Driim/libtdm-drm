@@ -185,6 +185,24 @@ _tdm_drm_display_wait_vblank(int fd, int pipe, uint *target_msc, void *data)
 }
 
 static tdm_error
+_tdm_drm_output_update_status(tdm_drm_output_data *output_data,
+                              tdm_output_conn_status status)
+{
+	RETURN_VAL_IF_FAIL(output_data, TDM_ERROR_INVALID_PARAMETER);
+
+	if (output_data->status == status)
+		return TDM_ERROR_NONE;
+
+	output_data->status = status;
+
+	if (output_data->status_func)
+		output_data->status_func(output_data, status,
+		                         output_data->status_user_data);
+
+	return TDM_ERROR_NONE;
+}
+
+static tdm_error
 _tdm_drm_display_commit_primary_layer(tdm_drm_layer_data *layer_data,
                                       void *user_data, int *do_waitvblank)
 {
@@ -215,10 +233,9 @@ _tdm_drm_display_commit_primary_layer(tdm_drm_layer_data *layer_data,
 			TDM_ERR("set crtc failed: %m");
 			return TDM_ERROR_OPERATION_FAILED;
 		}
-		output_data->status = TDM_OUTPUT_CONN_STATUS_MODE_SETTED;
-		if (output_data->status_func)
-			output_data->status_func(output_data, output_data->status,
-									 output_data->status_user_data);
+
+		_tdm_drm_output_update_status(output_data, TDM_OUTPUT_CONN_STATUS_MODE_SETTED);
+
 		*do_waitvblank = 1;
 		return TDM_ERROR_NONE;
 	} else if (layer_data->display_buffer_changed) {
@@ -230,10 +247,10 @@ _tdm_drm_display_commit_primary_layer(tdm_drm_layer_data *layer_data,
 				TDM_ERR("unset crtc failed: %m");
 				return TDM_ERROR_OPERATION_FAILED;
 			}
-			output_data->status = TDM_OUTPUT_CONN_STATUS_CONNECTED;
-			if (output_data->status_func)
-				output_data->status_func(output_data, output_data->status,
-										 output_data->status_user_data);
+
+			if (output_data->status == TDM_OUTPUT_CONN_STATUS_MODE_SETTED)
+				_tdm_drm_output_update_status(output_data, TDM_OUTPUT_CONN_STATUS_CONNECTED);
+
 			*do_waitvblank = 1;
 		} else {
 			tdm_drm_event_data *event_data = calloc(1, sizeof(tdm_drm_event_data));
@@ -707,24 +724,6 @@ tdm_drm_display_destroy_output_list(tdm_drm_data *drm_data)
 		free(o->output_modes);
 		free(o);
 	}
-}
-
-static tdm_error
-_tdm_drm_output_update_status(tdm_drm_output_data *output_data,
-                              tdm_output_conn_status status)
-{
-	RETURN_VAL_IF_FAIL(output_data, TDM_ERROR_INVALID_PARAMETER);
-
-	if (output_data->status == status)
-		return TDM_ERROR_NONE;
-
-	output_data->status = status;
-
-	if (output_data->status_func)
-		output_data->status_func(output_data, status,
-		                         output_data->status_user_data);
-
-	return TDM_ERROR_NONE;
 }
 
 void
