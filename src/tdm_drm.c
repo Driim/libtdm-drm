@@ -405,7 +405,7 @@ failed:
 tdm_backend_module tdm_backend_module_data = {
 	"drm",
 	"Samsung",
-	TDM_BACKEND_ABI_VERSION,
+	TDM_BACKEND_SET_ABI_VERSION(1, 1),
 	tdm_drm_init,
 	tdm_drm_deinit
 };
