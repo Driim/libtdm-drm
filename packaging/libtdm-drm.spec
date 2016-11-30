@@ -1,5 +1,5 @@
 Name:           libtdm-drm
-Version:        1.0.2
+Version:        1.0.3
 Release:        0
 Summary:        Tizen Display Manager DRM Back-End Library
 Group:          Development/Libraries
