@@ -382,14 +382,14 @@ _tdm_drm_display_create_layer_list(tdm_drm_data *drm_data)
 	tdm_drm_output_data *output_data = NULL;
 	int i;
 
+	if (LIST_IS_EMPTY(&drm_data->output_list)) {
+		TDM_ERR("no output");
+		return TDM_ERROR_OPERATION_FAILED;
+	}
+
 	/* The TDM drm backend only support one output. */
 	LIST_FOR_EACH_ENTRY(output_data, &drm_data->output_list, link) {
 		break;
-	}
-
-	if (!output_data) {
-		TDM_ERR("no output");
-		return TDM_ERROR_OPERATION_FAILED;
 	}
 
 	if (drm_data->plane_res->count_planes == 0) {
@@ -493,14 +493,14 @@ _tdm_drm_display_create_layer_list_type(tdm_drm_data *drm_data)
 	tdm_error ret;
 	int i;
 
+	if (LIST_IS_EMPTY(&drm_data->output_list)) {
+		TDM_ERR("no output");
+		return TDM_ERROR_OPERATION_FAILED;
+	}
+
 	/* The TDM drm backend only support one output. */
 	LIST_FOR_EACH_ENTRY(output_data, &drm_data->output_list, link) {
 		break;
-	}
-
-	if (!output_data) {
-		TDM_ERR("no output");
-		return TDM_ERROR_OPERATION_FAILED;
 	}
 
 	ret = _tdm_drm_display_get_property(drm_data,
