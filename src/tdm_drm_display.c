@@ -297,8 +297,10 @@ _tdm_drm_display_commit_layer(tdm_drm_layer_data *layer_data)
 		crtc_w = crtc->width;
 		if (crtc_w == 0) {
 			TDM_ERR("getting crtc width failed");
+			drmModeFreeCrtc(crtc);
 			return TDM_ERROR_OPERATION_FAILED;
 		}
+		drmModeFreeCrtc(crtc);
 	}
 
 	layer_data->display_buffer_changed = 0;
