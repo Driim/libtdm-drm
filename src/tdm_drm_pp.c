@@ -166,11 +166,25 @@ _tdm_drm_pp_convert(tdm_drm_pp_buffer *buffer, tdm_info_pp *info)
 	pixman_format_code_t src_format, dst_format;
 	int sbw, dbw;
 	int rotate = 0, hflip = 0;
+	tbm_bo bo = NULL;
+	int bo_cnt = 0;
+	int bo_size = 0;
 
 	RETURN_VAL_IF_FAIL(buffer != NULL, TDM_ERROR_INVALID_PARAMETER);
 	RETURN_VAL_IF_FAIL(buffer->src != NULL, TDM_ERROR_INVALID_PARAMETER);
 	RETURN_VAL_IF_FAIL(buffer->dst != NULL, TDM_ERROR_INVALID_PARAMETER);
 	RETURN_VAL_IF_FAIL(info != NULL, TDM_ERROR_INVALID_PARAMETER);
+
+	bo_cnt = tbm_surface_internal_get_num_bos(buffer->src);
+	RETURN_VAL_IF_FAIL(bo_cnt == 1, TDM_ERROR_INVALID_PARAMETER);
+
+	bo_cnt = tbm_surface_internal_get_num_bos(buffer->dst);
+	RETURN_VAL_IF_FAIL(bo_cnt == 1, TDM_ERROR_INVALID_PARAMETER);
+
+	bo = tbm_surface_internal_get_bo(buffer->src, 0);
+	RETURN_VAL_IF_FAIL(bo != NULL, TDM_ERROR_INVALID_PARAMETER);
+
+	bo_size = tbm_bo_size(bo);
 
 	/* not handle buffers which have 2 more gem handles */
 
@@ -213,6 +227,12 @@ _tdm_drm_pp_convert(tdm_drm_pp_buffer *buffer, tdm_info_pp *info)
 	rotate = (info->transform % 4) * 90;
 	if (info->transform >= TDM_TRANSFORM_FLIPPED)
 		hflip = 1;
+
+	if (bo_size < src_info.planes[0].stride * src_info.height) {
+		TDM_WRN("bo size(%d) is smaller than the expected size(%d)",
+				bo_size, src_info.planes[0].stride * src_info.height);
+		goto fail_convert;
+	}
 
 	_tdm_drm_pp_pixman_convert(PIXMAN_OP_SRC,
 	                           src_info.planes[0].ptr, dst_info.planes[0].ptr,
