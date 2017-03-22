@@ -28,8 +28,6 @@ make %{?_smp_mflags}
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/%{TZ_SYS_RO_SHARE}/license
-cp -af COPYING %{buildroot}/%{TZ_SYS_RO_SHARE}/license/%{name}
 %make_install
 
 %post
@@ -43,5 +41,5 @@ ln -s libtdm-drm.so %{_libdir}/tdm/libtdm-default.so
 %files
 %defattr(-,root,root,-)
 %manifest %{name}.manifest
-%{TZ_SYS_RO_SHARE}/license/%{name}
+%license COPYING
 %{_libdir}/tdm/libtdm-drm.so
