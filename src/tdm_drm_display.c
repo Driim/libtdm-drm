@@ -266,6 +266,7 @@ _tdm_drm_display_commit_primary_layer(tdm_drm_layer_data *layer_data,
 			if (drmModePageFlip(drm_data->drm_fd, output_data->crtc_id,
 			                    layer_data->display_buffer->fb_id, DRM_MODE_PAGE_FLIP_EVENT, event_data)) {
 				TDM_ERR("pageflip failed: %m");
+				free(event_data);
 				return TDM_ERROR_OPERATION_FAILED;
 			}
 			*do_waitvblank = 0;
