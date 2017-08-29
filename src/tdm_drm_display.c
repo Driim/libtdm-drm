@@ -766,155 +766,165 @@ tdm_drm_display_create_output_list(tdm_drm_data *drm_data)
 	int i;
 	tdm_error ret;
 	int allocated = 0;
+	drmModeConnectorPtr connector;
+	drmModeEncoderPtr encoder;
+	int conn_idx = -1;
+	int crtc_id = 0, c, j;
 
 	RETURN_VAL_IF_FAIL(LIST_IS_EMPTY(&drm_data->output_list),
 	                   TDM_ERROR_OPERATION_FAILED);
 
+	/* check if there is a connected output */
 	for (i = 0; i < drm_data->mode_res->count_connectors; i++) {
-		drmModeConnectorPtr connector;
-		drmModeEncoderPtr encoder;
-		int crtc_id = 0, c, j;
-
 		connector = drmModeGetConnector(drm_data->drm_fd,
 		                                drm_data->mode_res->connectors[i]);
 		if (!connector) {
 			TDM_ERR("no connector");
-			ret = TDM_ERROR_OPERATION_FAILED;
-			goto failed_create;
+			return TDM_ERROR_OPERATION_FAILED;
 		}
 
-		/* The TDM drm backend is not interested with disconnected connectors.
-		 * And it only considers 1 connected connector because it is the TDM
+		/* The TDM drm backend considers only 1 connector because it is the TDM
 		 * reference backend and can't take care of all hardware devices.
 		 * To support various connectors, planes and crtcs, the new TDM backend
 		 * should be implemented.
 		 */
-		if (connector->connection != DRM_MODE_CONNECTED) {
+		if (connector->connection == DRM_MODE_CONNECTED) {
+			conn_idx = i;
 			drmModeFreeConnector(connector);
-			continue;
-		}
-
-		if (connector->count_encoders != 1) {
-			TDM_ERR("too many encoders: %d", connector->count_encoders);
-			drmModeFreeConnector(connector);
-			ret = TDM_ERROR_OPERATION_FAILED;
-			goto failed_create;
-		}
-
-		encoder = drmModeGetEncoder(drm_data->drm_fd, connector->encoders[0]);
-		if (!encoder) {
-			TDM_ERR("no encoder");
-			drmModeFreeConnector(connector);
-			ret = TDM_ERROR_OPERATION_FAILED;
-			goto failed_create;
-		}
-
-		for (c = 0; c < drm_data->mode_res->count_crtcs; c++) {
-			if (allocated & (1 << c))
-				continue;
-
-			if ((encoder->possible_crtcs & (1 << c)) == 0)
-				continue;
-
-			crtc_id = drm_data->mode_res->crtcs[c];
-			allocated |= (1 << c);
 			break;
 		}
-
-		if (crtc_id == 0) {
-			TDM_ERR("no possible crtc");
-			drmModeFreeConnector(connector);
-			ret = TDM_ERROR_OPERATION_FAILED;
-			goto failed_create;
-		}
-
-		output_data = calloc(1, sizeof(tdm_drm_output_data));
-		if (!output_data) {
-			TDM_ERR("alloc failed");
-			drmModeFreeConnector(connector);
-			drmModeFreeEncoder(encoder);
-			ret = TDM_ERROR_OUT_OF_MEMORY;
-			goto failed_create;
-		}
-
-		LIST_INITHEAD(&output_data->layer_list);
-
-		output_data->drm_data = drm_data;
-		output_data->connector_id = drm_data->mode_res->connectors[i];
-		output_data->encoder_id = encoder->encoder_id;
-		output_data->crtc_id = crtc_id;
-		output_data->pipe = c;
-		output_data->connector_type = connector->connector_type;
-		output_data->connector_type_id = connector->connector_type_id;
-
-		if (connector->connection == DRM_MODE_CONNECTED)
-			output_data->status = TDM_OUTPUT_CONN_STATUS_CONNECTED;
-		else
-			output_data->status = TDM_OUTPUT_CONN_STATUS_DISCONNECTED;
-
-		for (j = 0; j < connector->count_props; j++) {
-			drmModePropertyPtr prop = drmModeGetProperty(drm_data->drm_fd,
-			                          connector->props[j]);
-			if (!prop)
-				continue;
-			if (!strcmp(prop->name, "DPMS")) {
-				output_data->dpms_prop_id = connector->props[j];
-				drmModeFreeProperty(prop);
-				break;
-			}
-			drmModeFreeProperty(prop);
-		}
-
-		if (output_data->dpms_prop_id == 0)
-			TDM_WRN("not support DPMS");
-
-		output_data->count_modes = connector->count_modes;
-		output_data->drm_modes = calloc(connector->count_modes,
-		                                sizeof(drmModeModeInfo));
-		if (!output_data->drm_modes) {
-			TDM_ERR("alloc failed");
-			free(output_data);
-			drmModeFreeConnector(connector);
-			drmModeFreeEncoder(encoder);
-			ret = TDM_ERROR_OUT_OF_MEMORY;
-			goto failed_create;
-		}
-		output_data->output_modes = calloc(connector->count_modes,
-		                                   sizeof(tdm_output_mode));
-		if (!output_data->output_modes) {
-			TDM_ERR("alloc failed");
-			free(output_data->drm_modes);
-			free(output_data);
-			drmModeFreeConnector(connector);
-			drmModeFreeEncoder(encoder);
-			ret = TDM_ERROR_OUT_OF_MEMORY;
-			goto failed_create;
-		}
-		for (j = 0; j < connector->count_modes; j++) {
-			output_data->drm_modes[j] = connector->modes[j];
-			_tdm_drm_display_to_tdm_mode(&output_data->drm_modes[j],
-			                             &output_data->output_modes[j]);
-		}
-
-		LIST_ADDTAIL(&output_data->link, &drm_data->output_list);
-
-		TDM_DBG("output_data(%p) connector_id(%d:%d:%d-%d) encoder_id(%d) crtc_id(%d) pipe(%d) dpms_id(%d)",
-		        output_data, output_data->connector_id, output_data->status,
-		        output_data->connector_type,
-		        output_data->connector_type_id, output_data->encoder_id, output_data->crtc_id,
-		        output_data->pipe, output_data->dpms_prop_id);
-
-		drmModeFreeEncoder(encoder);
 		drmModeFreeConnector(connector);
+	}
 
-		/* The TDM drm backend is not interested with disconnected connectors.
-		 * And it only considers 1 connected connector because it is the TDM
-		 * reference backend and can't take care of all hardware devices.
-		 * To support various connectors, planes and crtcs, the new TDM backend
-		 * should be implemented.
-		 */
+	/* use the first connecoct_id if there is not connector which is connected */
+	if (conn_idx == -1)
+		conn_idx = 0;
+
+	/* The TDM drm backend considers only 1 connector because it is the TDM
+	 * reference backend and can't take care of all hardware devices.
+	 * To support various connectors, planes and crtcs, the new TDM backend
+	 * should be implemented.
+	 */
+	connector = drmModeGetConnector(drm_data->drm_fd,
+	                                drm_data->mode_res->connectors[conn_idx]);
+	if (!connector) {
+		TDM_ERR("no connector");
+		ret = TDM_ERROR_OPERATION_FAILED;
+		goto failed_create;
+	}
+
+	if (connector->count_encoders != 1) {
+		TDM_ERR("too many encoders: %d", connector->count_encoders);
+		drmModeFreeConnector(connector);
+		ret = TDM_ERROR_OPERATION_FAILED;
+		goto failed_create;
+	}
+
+	encoder = drmModeGetEncoder(drm_data->drm_fd, connector->encoders[0]);
+	if (!encoder) {
+		TDM_ERR("no encoder");
+		drmModeFreeConnector(connector);
+		ret = TDM_ERROR_OPERATION_FAILED;
+		goto failed_create;
+	}
+
+	for (c = 0; c < drm_data->mode_res->count_crtcs; c++) {
+		if (allocated & (1 << c))
+			continue;
+
+		if ((encoder->possible_crtcs & (1 << c)) == 0)
+			continue;
+
+		crtc_id = drm_data->mode_res->crtcs[c];
+		allocated |= (1 << c);
 		break;
 	}
+
+	if (crtc_id == 0) {
+		TDM_ERR("no possible crtc");
+		drmModeFreeConnector(connector);
+		ret = TDM_ERROR_OPERATION_FAILED;
+		goto failed_create;
+	}
+
+	output_data = calloc(1, sizeof(tdm_drm_output_data));
+	if (!output_data) {
+		TDM_ERR("alloc failed");
+		drmModeFreeConnector(connector);
+		drmModeFreeEncoder(encoder);
+		ret = TDM_ERROR_OUT_OF_MEMORY;
+		goto failed_create;
+	}
+
+	LIST_INITHEAD(&output_data->layer_list);
+
+	output_data->drm_data = drm_data;
+	output_data->connector_id = drm_data->mode_res->connectors[conn_idx];
+	output_data->encoder_id = encoder->encoder_id;
+	output_data->crtc_id = crtc_id;
+	output_data->pipe = c;
+	output_data->connector_type = connector->connector_type;
+	output_data->connector_type_id = connector->connector_type_id;
+
+	if (connector->connection == DRM_MODE_CONNECTED)
+		output_data->status = TDM_OUTPUT_CONN_STATUS_CONNECTED;
+	else
+		output_data->status = TDM_OUTPUT_CONN_STATUS_DISCONNECTED;
+
+	for (j = 0; j < connector->count_props; j++) {
+		drmModePropertyPtr prop = drmModeGetProperty(drm_data->drm_fd,
+		                          connector->props[j]);
+		if (!prop)
+			continue;
+		if (!strcmp(prop->name, "DPMS")) {
+			output_data->dpms_prop_id = connector->props[j];
+			drmModeFreeProperty(prop);
+			break;
+		}
+		drmModeFreeProperty(prop);
+	}
+
+	if (output_data->dpms_prop_id == 0)
+		TDM_WRN("not support DPMS");
+
+	output_data->count_modes = connector->count_modes;
+	output_data->drm_modes = calloc(connector->count_modes,
+	                                sizeof(drmModeModeInfo));
+	if (!output_data->drm_modes) {
+		TDM_ERR("alloc failed");
+		free(output_data);
+		drmModeFreeConnector(connector);
+		drmModeFreeEncoder(encoder);
+		ret = TDM_ERROR_OUT_OF_MEMORY;
+		goto failed_create;
+	}
+	output_data->output_modes = calloc(connector->count_modes,
+	                                   sizeof(tdm_output_mode));
+	if (!output_data->output_modes) {
+		TDM_ERR("alloc failed");
+		free(output_data->drm_modes);
+		free(output_data);
+		drmModeFreeConnector(connector);
+		drmModeFreeEncoder(encoder);
+		ret = TDM_ERROR_OUT_OF_MEMORY;
+		goto failed_create;
+	}
+	for (j = 0; j < connector->count_modes; j++) {
+		output_data->drm_modes[j] = connector->modes[j];
+		_tdm_drm_display_to_tdm_mode(&output_data->drm_modes[j],
+		                             &output_data->output_modes[j]);
+	}
+
+	LIST_ADDTAIL(&output_data->link, &drm_data->output_list);
+
+	TDM_DBG("output_data(%p) connector_id(%d:%d:%d-%d) encoder_id(%d) crtc_id(%d) pipe(%d) dpms_id(%d)",
+	        output_data, output_data->connector_id, output_data->status,
+	        output_data->connector_type,
+	        output_data->connector_type_id, output_data->encoder_id, output_data->crtc_id,
+	        output_data->pipe, output_data->dpms_prop_id);
+
+	drmModeFreeEncoder(encoder);
+	drmModeFreeConnector(connector);
 
 	TDM_DBG("output count: %d", drm_data->mode_res->count_connectors);
 
