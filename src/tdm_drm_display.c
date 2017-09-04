@@ -1502,8 +1502,11 @@ drm_layer_get_capability(tdm_layer *layer, tdm_caps_layer *caps)
 	for (i = 0; i < caps->format_count; i++) {
 		/* TODO: kernel reports wrong formats */
 		if (plane->formats[i] != DRM_FORMAT_XRGB8888 &&
-		    plane->formats[i] != DRM_FORMAT_ARGB8888)
+		    plane->formats[i] != DRM_FORMAT_ARGB8888) {
+			TDM_WRN("plane(%d) zpos(%d) %c%c%c%c skipped",
+					layer_data->plane_id, layer_data->zpos, FOURCC_STR(plane->formats[i]));
 			continue;
+		}
 		caps->formats[format_count] = tdm_drm_format_to_tbm_format(plane->formats[i]);
 		format_count++;
 	}
