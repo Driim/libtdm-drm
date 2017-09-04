@@ -557,6 +557,14 @@ _tdm_drm_display_create_layer_list_type(tdm_drm_data *drm_data)
 			goto failed;
 		}
 
+		/* The TDM drm backend only support a primary layer. */
+		if (type != DRM_PLANE_TYPE_PRIMARY) {
+			TDM_INFO("The TDM drm backend only support a primary layer. plane(%d) type(%d)",
+					 plane->plane_id, type);
+			drmModeFreePlane(plane);
+			continue;
+		}
+
 		planes[plane_cnt] = plane;
 		types[plane_cnt] = type;
 		plane_cnt++;
