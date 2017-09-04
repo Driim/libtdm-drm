@@ -1504,7 +1504,7 @@ drm_layer_get_capability(tdm_layer *layer, tdm_caps_layer *caps)
 		if (plane->formats[i] != DRM_FORMAT_XRGB8888 &&
 		    plane->formats[i] != DRM_FORMAT_ARGB8888)
 			continue;
-		caps->formats[i] = tdm_drm_format_to_tbm_format(plane->formats[i]);
+		caps->formats[format_count] = tdm_drm_format_to_tbm_format(plane->formats[i]);
 		format_count++;
 	}
 
