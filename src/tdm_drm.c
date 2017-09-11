@@ -44,7 +44,7 @@ _tdm_find_primary_gpu(void)
 			continue;
 
 		pci = udev_device_get_parent_with_subsystem_devtype(device,
-		                "pci", NULL);
+						"pci", NULL);
 		if (pci) {
 			id = udev_device_get_sysattr_value(pci, "boot_vga");
 			if (id && !strcmp(id, "1")) {
@@ -91,9 +91,8 @@ _tdm_drm_udev_fd_handler(int fd, tdm_event_loop_mask mask, void *user_data)
 
 	hotplug = udev_device_get_property_value(dev, "HOTPLUG");
 
-	if (memcmp(&s.st_rdev, &udev_devnum, sizeof (dev_t)) == 0 &&
-	        hotplug && atoi(hotplug) == 1)
-	{
+	if (memcmp(&s.st_rdev, &udev_devnum, sizeof(dev_t)) == 0 &&
+			hotplug && atoi(hotplug) == 1) {
 		TDM_INFO("HotPlug");
 		tdm_drm_display_update_output_status(edata);
 	}
@@ -122,16 +121,16 @@ _tdm_drm_udev_init(tdm_drm_data *edata)
 	}
 
 	if (udev_monitor_filter_add_match_subsystem_devtype(mon, "drm", "drm_minor") > 0 ||
-	    udev_monitor_enable_receiving(mon) < 0) {
+		udev_monitor_enable_receiving(mon) < 0) {
 		TDM_ERR("add match subsystem failed");
 		goto failed;
 	}
 
 	edata->uevent_source =
 		tdm_event_loop_add_fd_handler(edata->dpy, udev_monitor_get_fd(mon),
-		                              TDM_EVENT_LOOP_READABLE,
-		                              _tdm_drm_udev_fd_handler,
-		                              edata, NULL);
+									  TDM_EVENT_LOOP_READABLE,
+									  _tdm_drm_udev_fd_handler,
+									  edata, NULL);
 	if (!edata->uevent_source) {
 		TDM_ERR("couldn't create udev event source");
 		goto failed;
@@ -173,9 +172,8 @@ _tdm_drm_open_drm(void)
 	int fd = -1;
 
 	fd = drmOpen(TDM_DRM_NAME, NULL);
-	if (fd < 0) {
+	if (fd < 0)
 		TDM_WRN("Cannot open '%s' drm", TDM_DRM_NAME);
-	}
 
 #ifdef HAVE_UDEV
 	if (fd < 0) {
@@ -331,7 +329,6 @@ tdm_drm_init(tdm_display *dpy, tdm_error *error)
 	/* The drm master fd can be opened by a tbm backend module in
 	 * tbm_bufmgr_init() time. In this case, we just get it from
 	 * TBM_DRM_MASTER_FD enviroment.
-	 * 
 	 */
 	drm_data->drm_fd = tdm_helper_get_fd("TBM_DRM_MASTER_FD");
 	if (drm_data->drm_fd < 0)

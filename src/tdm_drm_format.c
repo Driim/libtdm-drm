@@ -9,7 +9,7 @@
 
 typedef struct {
 	tbm_format  tbm_format;
-	uint32_t    drm_format;
+	uint32_t	drm_format;
 } tbm_drm_format_data;
 
 static const tbm_drm_format_data formats[] = {

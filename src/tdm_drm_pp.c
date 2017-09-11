@@ -58,28 +58,28 @@ _tdm_drm_pp_pixman_get_format(tbm_format tbmfmt)
 
 int
 _tdm_drm_pp_pixman_convert(pixman_op_t op,
-                           unsigned char *srcbuf, unsigned char *dstbuf,
-                           pixman_format_code_t src_format, pixman_format_code_t dst_format,
-                           int sbw, int sbh, int sx, int sy, int sw, int sh,
-                           int dbw, int dbh, int dx, int dy, int dw, int dh,
-                           int rotate, int hflip, int vflip)
+						   unsigned char *srcbuf, unsigned char *dstbuf,
+						   pixman_format_code_t src_format, pixman_format_code_t dst_format,
+						   int sbw, int sbh, int sx, int sy, int sw, int sh,
+						   int dbw, int dbh, int dx, int dy, int dw, int dh,
+						   int rotate, int hflip, int vflip)
 {
-	pixman_image_t    *src_img;
-	pixman_image_t    *dst_img;
+	pixman_image_t	*src_img;
+	pixman_image_t	*dst_img;
 	struct pixman_f_transform ft;
 	pixman_transform_t transform;
-	int                src_stride, dst_stride;
-	int                src_bpp;
-	int                dst_bpp;
-	double             scale_x, scale_y;
-	int                rotate_step;
-	int                ret = 0;
+	int				src_stride, dst_stride;
+	int				src_bpp;
+	int				dst_bpp;
+	double			 scale_x, scale_y;
+	int				rotate_step;
+	int				ret = 0;
 
 	RETURN_VAL_IF_FAIL(srcbuf != NULL, 0);
 	RETURN_VAL_IF_FAIL(dstbuf != NULL, 0);
 
 	TDM_DBG("src(%dx%d: %d,%d %dx%d) dst(%dx%d: %d,%d %dx%d) flip(%d,%d), rot(%d)",
-	        sbw, sbh, sx, sy, sw, sh, dbw, dbh, dx, dy, dw, dh, hflip, vflip, rotate);
+			sbw, sbh, sx, sy, sw, sh, dbw, dbh, dx, dy, dw, dh, hflip, vflip, rotate);
 
 	src_bpp = PIXMAN_FORMAT_BPP(src_format) / 8;
 	RETURN_VAL_IF_FAIL(src_bpp > 0, 0);
@@ -93,9 +93,9 @@ _tdm_drm_pp_pixman_convert(pixman_op_t op,
 	dst_stride = dbw * dst_bpp;
 
 	src_img = pixman_image_create_bits(src_format, sbw, sbh, (uint32_t *)srcbuf,
-	                                   src_stride);
+									   src_stride);
 	dst_img = pixman_image_create_bits(dst_format, dbw, dbh, (uint32_t *)dstbuf,
-	                                   dst_stride);
+									   dst_stride);
 
 	GOTO_IF_FAIL(src_img != NULL, CANT_CONVERT);
 	GOTO_IF_FAIL(dst_img != NULL, CANT_CONVERT);
@@ -208,7 +208,7 @@ _tdm_drm_pp_convert(tdm_drm_pp_buffer *buffer, tdm_info_pp *info)
 			dst_format = PIXMAN_a8b8g8r8;
 		else if (dst_info.format == TBM_FORMAT_YVU420) {
 			TDM_ERR("can't convert %c%c%c%c to %c%c%c%c",
-			        FOURCC_STR(src_info.format), FOURCC_STR(dst_info.format));
+					FOURCC_STR(src_info.format), FOURCC_STR(dst_info.format));
 			goto fail_convert;
 		}
 	}
@@ -235,15 +235,15 @@ _tdm_drm_pp_convert(tdm_drm_pp_buffer *buffer, tdm_info_pp *info)
 	}
 
 	_tdm_drm_pp_pixman_convert(PIXMAN_OP_SRC,
-	                           src_info.planes[0].ptr, dst_info.planes[0].ptr,
-	                           src_format, dst_format,
-	                           sbw, src_info.height,
-	                           info->src_config.pos.x, info->src_config.pos.y,
-	                           info->src_config.pos.w, info->src_config.pos.h,
-	                           dbw, dst_info.height,
-	                           info->dst_config.pos.x, info->dst_config.pos.y,
-	                           info->dst_config.pos.w, info->dst_config.pos.h,
-	                           rotate, hflip, 0);
+							   src_info.planes[0].ptr, dst_info.planes[0].ptr,
+							   src_format, dst_format,
+							   sbw, src_info.height,
+							   info->src_config.pos.x, info->src_config.pos.y,
+							   info->src_config.pos.w, info->src_config.pos.h,
+							   dbw, dst_info.height,
+							   info->dst_config.pos.x, info->dst_config.pos.y,
+							   info->dst_config.pos.w, info->dst_config.pos.h,
+							   rotate, hflip, 0);
 	tbm_surface_unmap(buffer->src);
 	tbm_surface_unmap(buffer->dst);
 
@@ -353,7 +353,7 @@ drm_pp_attach(tdm_pp *pp, tbm_surface_h src, tbm_surface_h dst)
 	RETURN_VAL_IF_FAIL(dst, TDM_ERROR_INVALID_PARAMETER);
 
 	if (tbm_surface_internal_get_num_bos(src) > 1 ||
-	    tbm_surface_internal_get_num_bos(dst) > 1) {
+		tbm_surface_internal_get_num_bos(dst) > 1) {
 		TDM_ERR("can't handle multiple tbm bos");
 		return TDM_ERROR_OPERATION_FAILED;
 	}
@@ -387,9 +387,9 @@ drm_pp_commit(tdm_pp *pp)
 
 		if (pp_data->done_func)
 			pp_data->done_func(pp_data,
-			                   b->src,
-			                   b->dst,
-			                   pp_data->done_user_data);
+							   b->src,
+							   b->dst,
+							   pp_data->done_user_data);
 		free(b);
 	}
 

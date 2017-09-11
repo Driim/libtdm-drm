@@ -15,9 +15,9 @@ typedef struct _tdm_drm_layer_data tdm_drm_layer_data;
 typedef struct _tdm_drm_event_data tdm_drm_event_data;
 
 typedef enum {
-        TDM_DRM_EVENT_TYPE_WAIT,
-        TDM_DRM_EVENT_TYPE_COMMIT,
-        TDM_DRM_EVENT_TYPE_PAGEFLIP,
+		TDM_DRM_EVENT_TYPE_WAIT,
+		TDM_DRM_EVENT_TYPE_COMMIT,
+		TDM_DRM_EVENT_TYPE_PAGEFLIP,
 } tdm_drm_event_type;
 
 typedef struct _tdm_drm_display_buffer {
@@ -95,11 +95,11 @@ _tdm_drm_display_get_mode(tdm_drm_output_data *output_data)
 	for (i = 0; i < output_data->count_modes; i++) {
 		drmModeModeInfoPtr drm_mode = &output_data->drm_modes[i];
 		if ((drm_mode->hdisplay == output_data->current_mode->hdisplay) &&
-		    (drm_mode->vdisplay == output_data->current_mode->vdisplay) &&
-		    (drm_mode->vrefresh == output_data->current_mode->vrefresh) &&
-		    (drm_mode->flags == output_data->current_mode->flags) &&
-		    (drm_mode->type == output_data->current_mode->type) &&
-		    !(strncmp(drm_mode->name, output_data->current_mode->name, TDM_NAME_LEN)))
+			(drm_mode->vdisplay == output_data->current_mode->vdisplay) &&
+			(drm_mode->vrefresh == output_data->current_mode->vrefresh) &&
+			(drm_mode->flags == output_data->current_mode->flags) &&
+			(drm_mode->type == output_data->current_mode->type) &&
+			!(strncmp(drm_mode->name, output_data->current_mode->name, TDM_NAME_LEN)))
 			return drm_mode;
 	}
 
@@ -121,7 +121,7 @@ _tdm_drm_display_find_buffer(tdm_drm_data *drm_data, tbm_surface_h buffer)
 
 static void
 _tdm_drm_display_to_tdm_mode(drmModeModeInfoPtr drm_mode,
-                             tdm_output_mode *tdm_mode)
+							 tdm_output_mode *tdm_mode)
 {
 	tdm_mode->clock = drm_mode->clock;
 	tdm_mode->hdisplay = drm_mode->hdisplay;
@@ -141,7 +141,7 @@ _tdm_drm_display_to_tdm_mode(drmModeModeInfoPtr drm_mode,
 }
 
 static tdm_error
-_tdm_drm_display_get_cur_msc (int fd, int pipe, uint *msc)
+_tdm_drm_display_get_cur_msc(int fd, int pipe, uint *msc)
 {
 	drmVBlank vbl;
 
@@ -186,7 +186,7 @@ _tdm_drm_display_wait_vblank(int fd, int pipe, uint *target_msc, void *data)
 
 static tdm_error
 _tdm_drm_output_update_status(tdm_drm_output_data *output_data,
-                              tdm_output_conn_status status)
+							  tdm_output_conn_status status)
 {
 	RETURN_VAL_IF_FAIL(output_data, TDM_ERROR_INVALID_PARAMETER);
 
@@ -197,14 +197,14 @@ _tdm_drm_output_update_status(tdm_drm_output_data *output_data,
 
 	if (output_data->status_func)
 		output_data->status_func(output_data, status,
-		                         output_data->status_user_data);
+								 output_data->status_user_data);
 
 	return TDM_ERROR_NONE;
 }
 
 static tdm_error
 _tdm_drm_display_commit_primary_layer(tdm_drm_layer_data *layer_data,
-                                      void *user_data, int *do_waitvblank)
+									  void *user_data, int *do_waitvblank)
 {
 	tdm_drm_data *drm_data = layer_data->drm_data;
 	tdm_drm_output_data *output_data = layer_data->output_data;
@@ -228,8 +228,8 @@ _tdm_drm_display_commit_primary_layer(tdm_drm_layer_data *layer_data,
 		}
 
 		if (drmModeSetCrtc(drm_data->drm_fd, output_data->crtc_id,
-		                   layer_data->display_buffer->fb_id, 0, 0,
-		                   &output_data->connector_id, 1, mode)) {
+						   layer_data->display_buffer->fb_id, 0, 0,
+						   &output_data->connector_id, 1, mode)) {
 			TDM_ERR("set crtc failed: %m");
 			return TDM_ERROR_OPERATION_FAILED;
 		}
@@ -243,7 +243,7 @@ _tdm_drm_display_commit_primary_layer(tdm_drm_layer_data *layer_data,
 
 		if (!layer_data->display_buffer) {
 			if (drmModeSetCrtc(drm_data->drm_fd, output_data->crtc_id,
-			                   0, 0, 0, NULL, 0, NULL)) {
+							   0, 0, 0, NULL, 0, NULL)) {
 				TDM_ERR("unset crtc failed: %m");
 				return TDM_ERROR_OPERATION_FAILED;
 			}
@@ -264,7 +264,7 @@ _tdm_drm_display_commit_primary_layer(tdm_drm_layer_data *layer_data,
 			event_data->output_data = output_data;
 			event_data->user_data = user_data;
 			if (drmModePageFlip(drm_data->drm_fd, output_data->crtc_id,
-			                    layer_data->display_buffer->fb_id, DRM_MODE_PAGE_FLIP_EVENT, event_data)) {
+								layer_data->display_buffer->fb_id, DRM_MODE_PAGE_FLIP_EVENT, event_data)) {
 				TDM_ERR("pageflip failed: %m");
 				free(event_data);
 				return TDM_ERROR_OPERATION_FAILED;
@@ -309,7 +309,7 @@ _tdm_drm_display_commit_layer(tdm_drm_layer_data *layer_data)
 
 	if (!layer_data->display_buffer) {
 		if (drmModeSetPlane(drm_data->drm_fd, layer_data->plane_id,
-		                    output_data->crtc_id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+							output_data->crtc_id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 			TDM_ERR("unset plane(%d) filed: %m", layer_data->plane_id);
 
 		return TDM_ERROR_NONE;
@@ -322,10 +322,10 @@ _tdm_drm_display_commit_layer(tdm_drm_layer_data *layer_data)
 	fh = ((unsigned int)layer_data->info.src_config.pos.h) << 16;
 
 	if (drmModeSetPlane(drm_data->drm_fd, layer_data->plane_id,
-	                    output_data->crtc_id, layer_data->display_buffer->fb_id, 0,
-	                    layer_data->info.dst_pos.x, layer_data->info.dst_pos.y,
-	                    layer_data->info.dst_pos.w, layer_data->info.dst_pos.h,
-	                    fx, fy, fw, fh) < 0) {
+						output_data->crtc_id, layer_data->display_buffer->fb_id, 0,
+						layer_data->info.dst_pos.x, layer_data->info.dst_pos.y,
+						layer_data->info.dst_pos.w, layer_data->info.dst_pos.h,
+						fx, fy, fw, fh) < 0) {
 		TDM_ERR("set plane(%d) failed: %m", layer_data->plane_id);
 		return TDM_ERROR_OPERATION_FAILED;
 	}
@@ -343,8 +343,8 @@ _tdm_drm_display_commit_layer(tdm_drm_layer_data *layer_data)
 
 static void
 _tdm_drm_display_cb_event(int fd, unsigned int sequence,
-                          unsigned int tv_sec, unsigned int tv_usec,
-                          void *user_data)
+						  unsigned int tv_sec, unsigned int tv_usec,
+						  void *user_data)
 {
 	tdm_drm_event_data *event_data = user_data;
 	tdm_drm_output_data *output_data;
@@ -360,17 +360,17 @@ _tdm_drm_display_cb_event(int fd, unsigned int sequence,
 	case TDM_DRM_EVENT_TYPE_PAGEFLIP:
 		if (output_data->commit_func)
 			output_data->commit_func(output_data, sequence, tv_sec, tv_usec,
-			                         event_data->user_data);
+									 event_data->user_data);
 		break;
 	case TDM_DRM_EVENT_TYPE_WAIT:
 		if (output_data->vblank_func)
 			output_data->vblank_func(output_data, sequence, tv_sec, tv_usec,
-			                         event_data->user_data);
+									 event_data->user_data);
 		break;
 	case TDM_DRM_EVENT_TYPE_COMMIT:
 		if (output_data->commit_func)
 			output_data->commit_func(output_data, sequence, tv_sec, tv_usec,
-			                         event_data->user_data);
+									 event_data->user_data);
 		break;
 	default:
 		break;
@@ -427,12 +427,12 @@ _tdm_drm_display_create_layer_list(tdm_drm_data *drm_data)
 		layer_data->plane_id = drm_data->plane_res->planes[i];
 
 		layer_data->capabilities = TDM_LAYER_CAPABILITY_PRIMARY |
-		                           TDM_LAYER_CAPABILITY_GRAPHIC;
+								   TDM_LAYER_CAPABILITY_GRAPHIC;
 		output_data->primary_layer = layer_data;
 
 		TDM_INFO("layer_data(%p) plane_id(%d) crtc_id(%d) capabilities(%x)",
-		         layer_data, layer_data->plane_id, layer_data->output_data->crtc_id,
-		         layer_data->capabilities);
+				 layer_data, layer_data->plane_id, layer_data->output_data->crtc_id,
+				 layer_data->capabilities);
 
 		LIST_ADDTAIL(&layer_data->link, &output_data->layer_list);
 
@@ -449,9 +449,9 @@ _tdm_drm_display_create_layer_list(tdm_drm_data *drm_data)
 
 static tdm_error
 _tdm_drm_display_get_property(tdm_drm_data *drm_data,
-                              unsigned int obj_id, unsigned int obj_type,
-                              const char *name, unsigned int *value,
-                              int *is_immutable)
+							  unsigned int obj_id, unsigned int obj_type,
+							  const char *name, unsigned int *value,
+							  int *is_immutable)
 {
 	drmModeObjectPropertiesPtr props = NULL;
 	int i;
@@ -462,7 +462,7 @@ _tdm_drm_display_get_property(tdm_drm_data *drm_data,
 
 	for (i = 0; i < props->count_props; i++) {
 		drmModePropertyPtr prop = drmModeGetProperty(drm_data->drm_fd,
-		                          props->props[i]);
+								  props->props[i]);
 
 		if (!prop)
 			continue;
@@ -507,9 +507,9 @@ _tdm_drm_display_create_layer_list_type(tdm_drm_data *drm_data)
 	}
 
 	ret = _tdm_drm_display_get_property(drm_data,
-	                                    drm_data->plane_res->planes[0],
-	                                    DRM_MODE_OBJECT_PLANE, "type", &type,
-	                                    NULL);
+										drm_data->plane_res->planes[0],
+										DRM_MODE_OBJECT_PLANE, "type", &type,
+										NULL);
 	if (ret != TDM_ERROR_NONE) {
 		TDM_ERR("plane doesn't have 'type' property. Call a fallback function");
 
@@ -547,13 +547,13 @@ _tdm_drm_display_create_layer_list_type(tdm_drm_data *drm_data)
 		}
 
 		ret = _tdm_drm_display_get_property(drm_data,
-		                                    drm_data->plane_res->planes[i],
-		                                    DRM_MODE_OBJECT_PLANE, "type", &type,
-		                                    NULL);
+											drm_data->plane_res->planes[i],
+											DRM_MODE_OBJECT_PLANE, "type", &type,
+											NULL);
 		if (ret != TDM_ERROR_NONE) {
 			drmModeFreePlane(plane);
 			TDM_ERR("plane(%d) doesn't have 'type' info",
-			        drm_data->plane_res->planes[i]);
+					drm_data->plane_res->planes[i]);
 			goto failed;
 		}
 
@@ -604,15 +604,15 @@ _tdm_drm_display_create_layer_list_type(tdm_drm_data *drm_data)
 
 		if (types[i] == DRM_PLANE_TYPE_CURSOR) {
 			layer_data->capabilities = TDM_LAYER_CAPABILITY_CURSOR |
-			                           TDM_LAYER_CAPABILITY_GRAPHIC;
+									   TDM_LAYER_CAPABILITY_GRAPHIC;
 			layer_data->zpos = cpos_next++;
 		} else if (types[i] == DRM_PLANE_TYPE_OVERLAY) {
 			layer_data->capabilities = TDM_LAYER_CAPABILITY_OVERLAY |
-			                           TDM_LAYER_CAPABILITY_GRAPHIC;
+									   TDM_LAYER_CAPABILITY_GRAPHIC;
 			layer_data->zpos = opos_next++;
 		} else if (types[i] == DRM_PLANE_TYPE_PRIMARY) {
 			layer_data->capabilities = TDM_LAYER_CAPABILITY_PRIMARY |
-			                           TDM_LAYER_CAPABILITY_GRAPHIC;
+									   TDM_LAYER_CAPABILITY_GRAPHIC;
 			layer_data->zpos = 0;
 			output_data->primary_layer = layer_data;
 		} else {
@@ -621,8 +621,8 @@ _tdm_drm_display_create_layer_list_type(tdm_drm_data *drm_data)
 		}
 
 		TDM_INFO("layer_data(%p) plane_id(%d) crtc_id(%d) zpos(%d) capabilities(%x)",
-		         layer_data, layer_data->plane_id, layer_data->output_data->crtc_id,
-		         layer_data->zpos, layer_data->capabilities);
+				 layer_data, layer_data->plane_id, layer_data->output_data->crtc_id,
+				 layer_data->zpos, layer_data->capabilities);
 
 		LIST_ADDTAIL(&layer_data->link, &output_data->layer_list);
 	}
@@ -750,7 +750,7 @@ tdm_drm_display_update_output_status(tdm_drm_data *drm_data)
 		tdm_output_conn_status new_status;
 
 		connector = drmModeGetConnector(drm_data->drm_fd,
-		                                output_data->connector_id);
+										output_data->connector_id);
 		if (!connector) {
 			TDM_ERR("no connector: %d", output_data->connector_id);
 			continue;
@@ -780,12 +780,12 @@ tdm_drm_display_create_output_list(tdm_drm_data *drm_data)
 	int crtc_id = 0, c, j;
 
 	RETURN_VAL_IF_FAIL(LIST_IS_EMPTY(&drm_data->output_list),
-	                   TDM_ERROR_OPERATION_FAILED);
+					   TDM_ERROR_OPERATION_FAILED);
 
 	/* check if there is a connected output */
 	for (i = 0; i < drm_data->mode_res->count_connectors; i++) {
 		connector = drmModeGetConnector(drm_data->drm_fd,
-		                                drm_data->mode_res->connectors[i]);
+										drm_data->mode_res->connectors[i]);
 		if (!connector) {
 			TDM_ERR("no connector");
 			return TDM_ERROR_OPERATION_FAILED;
@@ -814,7 +814,7 @@ tdm_drm_display_create_output_list(tdm_drm_data *drm_data)
 	 * should be implemented.
 	 */
 	connector = drmModeGetConnector(drm_data->drm_fd,
-	                                drm_data->mode_res->connectors[conn_idx]);
+									drm_data->mode_res->connectors[conn_idx]);
 	if (!connector) {
 		TDM_ERR("no connector");
 		ret = TDM_ERROR_OPERATION_FAILED;
@@ -881,7 +881,7 @@ tdm_drm_display_create_output_list(tdm_drm_data *drm_data)
 
 	for (j = 0; j < connector->count_props; j++) {
 		drmModePropertyPtr prop = drmModeGetProperty(drm_data->drm_fd,
-		                          connector->props[j]);
+								  connector->props[j]);
 		if (!prop)
 			continue;
 		if (!strcmp(prop->name, "DPMS")) {
@@ -897,7 +897,7 @@ tdm_drm_display_create_output_list(tdm_drm_data *drm_data)
 
 	output_data->count_modes = connector->count_modes;
 	output_data->drm_modes = calloc(connector->count_modes,
-	                                sizeof(drmModeModeInfo));
+									sizeof(drmModeModeInfo));
 	if (!output_data->drm_modes) {
 		TDM_ERR("alloc failed");
 		free(output_data);
@@ -907,7 +907,7 @@ tdm_drm_display_create_output_list(tdm_drm_data *drm_data)
 		goto failed_create;
 	}
 	output_data->output_modes = calloc(connector->count_modes,
-	                                   sizeof(tdm_output_mode));
+									   sizeof(tdm_output_mode));
 	if (!output_data->output_modes) {
 		TDM_ERR("alloc failed");
 		free(output_data->drm_modes);
@@ -920,16 +920,16 @@ tdm_drm_display_create_output_list(tdm_drm_data *drm_data)
 	for (j = 0; j < connector->count_modes; j++) {
 		output_data->drm_modes[j] = connector->modes[j];
 		_tdm_drm_display_to_tdm_mode(&output_data->drm_modes[j],
-		                             &output_data->output_modes[j]);
+									 &output_data->output_modes[j]);
 	}
 
 	LIST_ADDTAIL(&output_data->link, &drm_data->output_list);
 
 	TDM_DBG("output_data(%p) connector_id(%d:%d:%d-%d) encoder_id(%d) crtc_id(%d) pipe(%d) dpms_id(%d)",
-	        output_data, output_data->connector_id, output_data->status,
-	        output_data->connector_type,
-	        output_data->connector_type_id, output_data->encoder_id, output_data->crtc_id,
-	        output_data->pipe, output_data->dpms_prop_id);
+			output_data, output_data->connector_id, output_data->status,
+			output_data->connector_type,
+			output_data->connector_type_id, output_data->encoder_id, output_data->crtc_id,
+			output_data->pipe, output_data->dpms_prop_id);
 
 	drmModeFreeEncoder(encoder);
 	drmModeFreeConnector(connector);
@@ -1101,7 +1101,7 @@ drm_output_get_capability(tdm_output *output, tdm_caps_output *caps)
 	}
 
 	props = drmModeObjectGetProperties(drm_data->drm_fd, output_data->crtc_id,
-	                                   DRM_MODE_OBJECT_CRTC);
+									   DRM_MODE_OBJECT_CRTC);
 	if (!props) {
 		ret = TDM_ERROR_OPERATION_FAILED;
 		TDM_ERR("get crtc properties failed: %m\n");
@@ -1196,8 +1196,8 @@ drm_output_set_property(tdm_output *output, unsigned int id, tdm_value value)
 
 	drm_data = output_data->drm_data;
 	ret = drmModeObjectSetProperty(drm_data->drm_fd,
-	                               output_data->crtc_id, DRM_MODE_OBJECT_CRTC,
-	                               id, value.u32);
+								   output_data->crtc_id, DRM_MODE_OBJECT_CRTC,
+								   id, value.u32);
 	if (ret < 0) {
 		TDM_ERR("set property failed: %m");
 		return TDM_ERROR_OPERATION_FAILED;
@@ -1220,7 +1220,7 @@ drm_output_get_property(tdm_output *output, unsigned int id, tdm_value *value)
 
 	drm_data = output_data->drm_data;
 	props = drmModeObjectGetProperties(drm_data->drm_fd, output_data->crtc_id,
-	                                   DRM_MODE_OBJECT_CRTC);
+									   DRM_MODE_OBJECT_CRTC);
 	if (props == NULL) {
 		TDM_ERR("get property failed: %m");
 		return TDM_ERROR_OPERATION_FAILED;
@@ -1239,7 +1239,7 @@ drm_output_get_property(tdm_output *output, unsigned int id, tdm_value *value)
 
 tdm_error
 drm_output_wait_vblank(tdm_output *output, int interval, int sync,
-                       void *user_data)
+					   void *user_data)
 {
 	tdm_drm_output_data *output_data = output;
 	tdm_drm_data *drm_data;
@@ -1258,7 +1258,7 @@ drm_output_wait_vblank(tdm_output *output, int interval, int sync,
 	drm_data = output_data->drm_data;
 
 	ret = _tdm_drm_display_get_cur_msc(drm_data->drm_fd, output_data->pipe,
-	                                   &target_msc);
+									   &target_msc);
 	if (ret != TDM_ERROR_NONE)
 		goto failed_vblank;
 
@@ -1269,7 +1269,7 @@ drm_output_wait_vblank(tdm_output *output, int interval, int sync,
 	event_data->user_data = user_data;
 
 	ret = _tdm_drm_display_wait_vblank(drm_data->drm_fd, output_data->pipe,
-	                                   &target_msc, event_data);
+									   &target_msc, event_data);
 	if (ret != TDM_ERROR_NONE)
 		goto failed_vblank;
 
@@ -1281,7 +1281,7 @@ failed_vblank:
 
 tdm_error
 drm_output_set_vblank_handler(tdm_output *output,
-                              tdm_output_vblank_handler func)
+							  tdm_output_vblank_handler func)
 {
 	tdm_drm_output_data *output_data = output;
 
@@ -1309,7 +1309,7 @@ drm_output_commit(tdm_output *output, int sync, void *user_data)
 	LIST_FOR_EACH_ENTRY(layer_data, &output_data->layer_list, link) {
 		if (layer_data == output_data->primary_layer) {
 			ret = _tdm_drm_display_commit_primary_layer(layer_data, user_data,
-			                &do_waitvblank);
+							&do_waitvblank);
 			if (ret != TDM_ERROR_NONE)
 				return ret;
 		} else {
@@ -1329,7 +1329,7 @@ drm_output_commit(tdm_output *output, int sync, void *user_data)
 		}
 
 		ret = _tdm_drm_display_get_cur_msc(drm_data->drm_fd, output_data->pipe,
-		                                   &target_msc);
+										   &target_msc);
 		if (ret != TDM_ERROR_NONE) {
 			free(event_data);
 			return ret;
@@ -1342,7 +1342,7 @@ drm_output_commit(tdm_output *output, int sync, void *user_data)
 		event_data->user_data = user_data;
 
 		ret = _tdm_drm_display_wait_vblank(drm_data->drm_fd, output_data->pipe,
-		                                   &target_msc, event_data);
+										   &target_msc, event_data);
 		if (ret != TDM_ERROR_NONE) {
 			free(event_data);
 			return ret;
@@ -1354,7 +1354,7 @@ drm_output_commit(tdm_output *output, int sync, void *user_data)
 
 tdm_error
 drm_output_set_commit_handler(tdm_output *output,
-                              tdm_output_commit_handler func)
+							  tdm_output_commit_handler func)
 {
 	tdm_drm_output_data *output_data = output;
 
@@ -1382,8 +1382,8 @@ drm_output_set_dpms(tdm_output *output, tdm_output_dpms dpms_value)
 
 	drm_data = output_data->drm_data;
 	ret = drmModeObjectSetProperty(drm_data->drm_fd,
-	                               output_data->connector_id, DRM_MODE_OBJECT_CONNECTOR,
-	                               output_data->dpms_prop_id, dpms_value);
+								   output_data->connector_id, DRM_MODE_OBJECT_CONNECTOR,
+								   output_data->dpms_prop_id, dpms_value);
 	if (ret < 0) {
 		TDM_ERR("set dpms failed: %m");
 		return TDM_ERROR_OPERATION_FAILED;
@@ -1405,7 +1405,7 @@ drm_output_get_dpms(tdm_output *output, tdm_output_dpms *dpms_value)
 
 	drm_data = output_data->drm_data;
 	props = drmModeObjectGetProperties(drm_data->drm_fd, output_data->connector_id,
-	                                   DRM_MODE_OBJECT_CONNECTOR);
+									   DRM_MODE_OBJECT_CONNECTOR);
 	if (props == NULL) {
 		TDM_ERR("get property failed: %m");
 		return TDM_ERROR_OPERATION_FAILED;
@@ -1451,8 +1451,8 @@ drm_output_get_mode(tdm_output *output, const tdm_output_mode **mode)
 
 tdm_error
 drm_output_set_status_handler(tdm_output *output,
-                              tdm_output_status_handler func,
-                              void *user_data)
+							  tdm_output_status_handler func,
+							  void *user_data)
 {
 	tdm_drm_output_data *output_data = output;
 
@@ -1502,7 +1502,7 @@ drm_layer_get_capability(tdm_layer *layer, tdm_caps_layer *caps)
 	for (i = 0; i < caps->format_count; i++) {
 		/* TODO: kernel reports wrong formats */
 		if (plane->formats[i] != DRM_FORMAT_XRGB8888 &&
-		    plane->formats[i] != DRM_FORMAT_ARGB8888) {
+			plane->formats[i] != DRM_FORMAT_ARGB8888) {
 			TDM_WRN("plane(%d) zpos(%d) %c%c%c%c skipped",
 					layer_data->plane_id, layer_data->zpos, FOURCC_STR(plane->formats[i]));
 			continue;
@@ -1514,7 +1514,7 @@ drm_layer_get_capability(tdm_layer *layer, tdm_caps_layer *caps)
 	caps->format_count = format_count;
 
 	props = drmModeObjectGetProperties(drm_data->drm_fd, layer_data->plane_id,
-	                                   DRM_MODE_OBJECT_PLANE);
+									   DRM_MODE_OBJECT_PLANE);
 	if (!props) {
 		ret = TDM_ERROR_OPERATION_FAILED;
 		TDM_ERR("get plane properties failed: %m\n");
@@ -1568,8 +1568,8 @@ drm_layer_set_property(tdm_layer *layer, unsigned int id, tdm_value value)
 
 	drm_data = layer_data->drm_data;
 	ret = drmModeObjectSetProperty(drm_data->drm_fd,
-	                               layer_data->plane_id, DRM_MODE_OBJECT_PLANE,
-	                               id, value.u32);
+								   layer_data->plane_id, DRM_MODE_OBJECT_PLANE,
+								   id, value.u32);
 	if (ret < 0) {
 		TDM_ERR("set property failed: %m");
 		return TDM_ERROR_OPERATION_FAILED;
@@ -1592,7 +1592,7 @@ drm_layer_get_property(tdm_layer *layer, unsigned int id, tdm_value *value)
 
 	drm_data = layer_data->drm_data;
 	props = drmModeObjectGetProperties(drm_data->drm_fd, layer_data->plane_id,
-	                                   DRM_MODE_OBJECT_PLANE);
+									   DRM_MODE_OBJECT_PLANE);
 	if (props == NULL) {
 		TDM_ERR("get property failed: %m");
 		return TDM_ERROR_OPERATION_FAILED;
@@ -1660,7 +1660,7 @@ drm_layer_set_buffer(tdm_layer *layer, tbm_surface_h buffer)
 		display_buffer->buffer = buffer;
 
 		err = tdm_buffer_add_destroy_handler(buffer, _tdm_drm_display_cb_destroy_buffer,
-		                                     drm_data);
+											 drm_data);
 		if (err != TDM_ERROR_NONE) {
 			TDM_ERR("add destroy handler fail");
 			free(display_buffer);
@@ -1692,13 +1692,13 @@ drm_layer_set_buffer(tdm_layer *layer, tbm_surface_h buffer)
 			tbm_surface_internal_get_plane_data(buffer, i, &size, &offsets[i], &pitches[i]);
 
 		ret = drmModeAddFB2(drm_data->drm_fd, width, height, format,
-		                    handles, pitches, offsets, &display_buffer->fb_id, 0);
+							handles, pitches, offsets, &display_buffer->fb_id, 0);
 		if (ret < 0) {
 			TDM_ERR("add fb failed: %m");
 			return TDM_ERROR_OPERATION_FAILED;
 		}
 		TDM_DBG("drm_data->drm_fd : %d, display_buffer->fb_id:%u", drm_data->drm_fd,
-		        display_buffer->fb_id);
+				display_buffer->fb_id);
 
 		if (IS_RGB(format))
 			display_buffer->width = pitches[0] >> 2;
