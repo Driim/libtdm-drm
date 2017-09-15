@@ -8,6 +8,7 @@
 
 #include "tdm_drm.h"
 #include <tdm_helper.h>
+#include <tbm_drm_helper.h>
 
 #define ENABLE_PP
 
@@ -327,20 +328,21 @@ tdm_drm_init(tdm_display *dpy, tdm_error *error)
 	drm_data->dpy = dpy;
 
 	/* The drm master fd can be opened by a tbm backend module in
-	 * tbm_bufmgr_init() time. In this case, we just get it from
-	 * TBM_DRM_MASTER_FD enviroment.
+	 * tbm_bufmgr_init() time. In this case, we just get it from tbm.
 	 */
-	drm_data->drm_fd = tdm_helper_get_fd("TBM_DRM_MASTER_FD");
-	if (drm_data->drm_fd < 0)
+	drm_data->drm_fd = tbm_drm_helper_get_master_fd();
+	if (drm_data->drm_fd < 0) {
 		drm_data->drm_fd = _tdm_drm_open_drm();
 
-	if (drm_data->drm_fd < 0) {
-		ret = TDM_ERROR_OPERATION_FAILED;
-		goto failed;
+		if (drm_data->drm_fd < 0) {
+			ret = TDM_ERROR_OPERATION_FAILED;
+			goto failed;
+		}
+
+		tbm_drm_helper_set_tbm_master_fd(drm_data->drm_fd);
 	}
 
-	/* To share the drm master fd with other modules in display server side. */
-	tdm_helper_set_fd("TDM_DRM_MASTER_FD", drm_data->drm_fd);
+	TDM_INFO("master fd: %d", drm_data->drm_fd);
 
 #ifdef HAVE_UDEV
 	_tdm_drm_udev_init(drm_data);
