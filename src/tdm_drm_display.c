@@ -851,6 +851,7 @@ tdm_drm_display_create_output_list(tdm_drm_data *drm_data)
 	if (crtc_id == 0) {
 		TDM_ERR("no possible crtc");
 		drmModeFreeConnector(connector);
+		drmModeFreeEncoder(encoder);
 		ret = TDM_ERROR_OPERATION_FAILED;
 		goto failed_create;
 	}
@@ -1533,10 +1534,14 @@ drm_layer_get_capability(tdm_layer *layer, tdm_caps_layer *caps)
 		drmModePropertyPtr prop = drmModeGetProperty(drm_data->drm_fd, props->props[i]);
 		if (!prop)
 			continue;
-		if (!strncmp(prop->name, "type", TDM_NAME_LEN))
+		if (!strncmp(prop->name, "type", TDM_NAME_LEN)) {
+			drmModeFreeProperty(prop);
 			continue;
-		if (!strncmp(prop->name, "zpos", TDM_NAME_LEN))
+		}
+		if (!strncmp(prop->name, "zpos", TDM_NAME_LEN)) {
+			drmModeFreeProperty(prop);
 			continue;
+		}
 		snprintf(caps->props[i].name, TDM_NAME_LEN, "%s", prop->name);
 		caps->props[i].id = props->props[i];
 		caps->prop_count++;
