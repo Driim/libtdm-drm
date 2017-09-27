@@ -124,8 +124,6 @@ _tdm_drm_pp_pixman_convert(pixman_op_t op,
 		case 3: /* 270 degrees */
 			s = 1, ty = -dh;
 			break;
-		default:
-			break;
 		}
 
 		pixman_f_transform_translate(&ft, NULL, tx, ty);
