@@ -121,12 +121,13 @@ typedef struct _tdm_drm_data {
 	struct list_head buffer_list;
 } tdm_drm_data;
 
-uint32_t	 tdm_drm_format_to_drm_format(tbm_format format);
-tbm_format   tdm_drm_format_to_tbm_format(uint32_t format);
+uint32_t	tdm_drm_format_to_drm_format(tbm_format format);
+tbm_format  tdm_drm_format_to_tbm_format(uint32_t format);
 
-void		 tdm_drm_display_update_output_status(tdm_drm_data *drm_data);
+void		tdm_drm_display_update_output_status(tdm_drm_data *drm_data);
 tdm_error	tdm_drm_display_create_output_list(tdm_drm_data *drm_data);
-void		 tdm_drm_display_destroy_output_list(tdm_drm_data *drm_data);
+void		tdm_drm_display_destroy_output_list(tdm_drm_data *drm_data);
 tdm_error	tdm_drm_display_create_layer_list(tdm_drm_data *drm_data);
+void		tdm_drm_display_destroy_buffer_list(tdm_drm_data *drm_data);
 
 #endif /* _TDM_DRM_H_ */

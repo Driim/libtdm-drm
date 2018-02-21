@@ -738,6 +738,17 @@ tdm_drm_display_destroy_output_list(tdm_drm_data *drm_data)
 }
 
 void
+tdm_drm_display_destroy_buffer_list(tdm_drm_data *drm_data)
+{
+	tdm_drm_display_buffer *b = NULL, *bb = NULL;
+
+	LIST_FOR_EACH_ENTRY_SAFE(b, bb, &drm_data->buffer_list, link) {
+		tdm_buffer_remove_destroy_handler(b->buffer, _tdm_drm_display_cb_destroy_buffer, drm_data);
+		_tdm_drm_display_cb_destroy_buffer(b->buffer, drm_data);
+	}
+}
+
+void
 tdm_drm_display_update_output_status(tdm_drm_data *drm_data)
 {
 	tdm_drm_output_data *output_data = NULL;
