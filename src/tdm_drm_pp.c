@@ -198,6 +198,8 @@ _tdm_drm_pp_convert(tdm_drm_pp_buffer *buffer, tdm_info_pp *info)
 	dst_format = _tdm_drm_pp_pixman_get_format(dst_info.format);
 	GOTO_IF_FAIL(dst_format > 0, fail_convert);
 
+	GOTO_IF_FAIL(pixman_format_supported_destination(dst_format), fail_convert);
+
 	if (src_info.format == TBM_FORMAT_YUV420) {
 		if (dst_info.format == TBM_FORMAT_XRGB8888)
 			dst_format = PIXMAN_x8b8g8r8;
