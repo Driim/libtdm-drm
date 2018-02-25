@@ -32,7 +32,6 @@ static tbm_format pp_formats[] = {
 	TBM_FORMAT_ARGB8888,
 	TBM_FORMAT_XRGB8888,
 	TBM_FORMAT_YUV420,
-	TBM_FORMAT_YVU420
 };
 
 #define NUM_PP_FORMAT   (sizeof(pp_formats) / sizeof(pp_formats[0]))
