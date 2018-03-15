@@ -1120,20 +1120,21 @@ drm_output_get_capability(tdm_output *output, tdm_caps_output *caps)
 		goto failed_get;
 	}
 
-	caps->prop_count = props->count_props;
-	caps->props = calloc(1, sizeof(tdm_prop) * caps->prop_count);
+	caps->props = calloc(1, sizeof(tdm_prop) * props->count_props);
 	if (!caps->props) {
 		ret = TDM_ERROR_OUT_OF_MEMORY;
 		TDM_ERR("alloc failed\n");
 		goto failed_get;
 	}
 
-	for (i = 0; i < caps->prop_count; i++) {
+	caps->prop_count = 0;
+	for (i = 0; i < props->count_props; i++) {
 		drmModePropertyPtr prop = drmModeGetProperty(drm_data->drm_fd, props->props[i]);
 		if (!prop)
 			continue;
-		snprintf(caps->props[i].name, TDM_NAME_LEN, "%s", prop->name);
-		caps->props[i].id = props->props[i];
+		snprintf(caps->props[caps->prop_count].name, TDM_NAME_LEN, "%s", prop->name);
+		caps->props[caps->prop_count].id = props->props[i];
+		caps->prop_count++;
 		drmModeFreeProperty(prop);
 	}
 
@@ -1553,8 +1554,8 @@ drm_layer_get_capability(tdm_layer *layer, tdm_caps_layer *caps)
 			drmModeFreeProperty(prop);
 			continue;
 		}
-		snprintf(caps->props[i].name, TDM_NAME_LEN, "%s", prop->name);
-		caps->props[i].id = props->props[i];
+		snprintf(caps->props[caps->prop_count].name, TDM_NAME_LEN, "%s", prop->name);
+		caps->props[caps->prop_count].id = props->props[i];
 		caps->prop_count++;
 		drmModeFreeProperty(prop);
 	}
