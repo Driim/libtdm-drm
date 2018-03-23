@@ -8,9 +8,6 @@
 #include "tdm_drm.h"
 #include "tdm_drm_pp.h"
 
-static int tdm_drm_buffer_key;
-#define TDM_DRM_BUFFER_KEY ((unsigned long)&tdm_drm_buffer_key)
-
 #define MIN_WIDTH   32
 
 typedef struct _tdm_drm_output_data tdm_drm_output_data;
@@ -24,7 +21,8 @@ typedef enum {
 } tdm_drm_event_type;
 
 typedef struct _tdm_drm_display_buffer {
-	tdm_drm_data *drm_data;
+	struct list_head link;
+
 	unsigned int fb_id;
 	tbm_surface_h buffer;
 	int width;
@@ -84,89 +82,6 @@ struct _tdm_drm_layer_data {
 	int display_buffer_changed;
 };
 
-static void
-_tdm_drm_display_buffer_destroy(void *user_data)
-{
-	tdm_drm_display_buffer *display_buffer = (tdm_drm_display_buffer *)user_data;
-
-	if (display_buffer->fb_id > 0) {
-		int ret = drmModeRmFB(display_buffer->drm_data->drm_fd, display_buffer->fb_id);
-		if (ret < 0) {
-			TDM_ERR("rm fb failed");
-			return;
-		}
-		TDM_DBG("drmModeRmFB success!!! fb_id:%d", display_buffer->fb_id);
-	} else
-		TDM_DBG("drmModeRmFB not called fb_id:%d", display_buffer->fb_id);
-
-	free(display_buffer);
-}
-
-static tdm_drm_display_buffer *
-_tdm_drm_display_get_buffer(tdm_drm_data *drm_data, tbm_surface_h buffer)
-{
-	tdm_drm_display_buffer *display_buffer = NULL;
-
-	if (!tbm_surface_internal_get_user_data(buffer, TDM_DRM_BUFFER_KEY, (void **)&display_buffer)) {
-		unsigned int width;
-		unsigned int height;
-		unsigned int format;
-		unsigned int handles[4] = {0,};
-		unsigned int pitches[4] = {0,};
-		unsigned int offsets[4] = {0,};
-		unsigned int size;
-		tbm_bo bo;
-		int i, count, ret;
-
-		display_buffer = calloc(1, sizeof(tdm_drm_display_buffer));
-		RETURN_VAL_IF_FAIL(display_buffer != NULL, NULL);
-
-		if (!tbm_surface_internal_add_user_data(buffer, TDM_DRM_BUFFER_KEY, _tdm_drm_display_buffer_destroy)) {
-			TDM_ERR("FAIL to create user_data for surface %p", buffer);
-			free(display_buffer);
-			return NULL;
-		}
-		if (!tbm_surface_internal_set_user_data(buffer, TDM_DRM_BUFFER_KEY, display_buffer)) {
-			TDM_ERR("FAIL to set user_data for surface %p", buffer);
-			tbm_surface_internal_delete_user_data(buffer, TDM_DRM_BUFFER_KEY);
-			free(display_buffer);
-			return NULL;
-		}
-
-		display_buffer->drm_data = drm_data;
-		display_buffer->buffer = buffer;
-
-		width = tbm_surface_get_width(buffer);
-		height = tbm_surface_get_height(buffer);
-		format = tbm_surface_get_format(buffer);
-		count = tbm_surface_internal_get_num_planes(format);
-		bo = tbm_surface_internal_get_bo(buffer, 0);
-		handles[0] = tbm_bo_get_handle(bo, TBM_DEVICE_DEFAULT).u32;
-		for (i = 1; i < count; i++)
-			handles[i] = handles[0];
-
-		for (i = 0; i < count; i++)
-			tbm_surface_internal_get_plane_data(buffer, i, &size, &offsets[i], &pitches[i]);
-
-		ret = drmModeAddFB2(drm_data->drm_fd, width, height, format,
-							handles, pitches, offsets, &display_buffer->fb_id, 0);
-		if (ret < 0) {
-			TDM_ERR("add fb failed: %m");
-			free(display_buffer);
-			return NULL;
-		}
-		TDM_DBG("drm_data->drm_fd : %d, display_buffer->fb_id:%u", drm_data->drm_fd,
-				display_buffer->fb_id);
-
-		if (IS_RGB(format))
-			display_buffer->width = pitches[0] >> 2;
-		else
-			display_buffer->width = pitches[0];
-	}
-
-	return display_buffer;
-}
-
 static drmModeModeInfoPtr
 _tdm_drm_display_get_mode(tdm_drm_output_data *output_data)
 {
@@ -186,6 +101,19 @@ _tdm_drm_display_get_mode(tdm_drm_output_data *output_data)
 			(drm_mode->type == output_data->current_mode->type) &&
 			!(strncmp(drm_mode->name, output_data->current_mode->name, TDM_NAME_LEN)))
 			return drm_mode;
+	}
+
+	return NULL;
+}
+
+static tdm_drm_display_buffer *
+_tdm_drm_display_find_buffer(tdm_drm_data *drm_data, tbm_surface_h buffer)
+{
+	tdm_drm_display_buffer *display_buffer = NULL;
+
+	LIST_FOR_EACH_ENTRY(display_buffer, &drm_data->buffer_list, link) {
+		if (display_buffer->buffer == buffer)
+			return display_buffer;
 	}
 
 	return NULL;
@@ -313,7 +241,18 @@ _tdm_drm_display_commit_primary_layer(tdm_drm_layer_data *layer_data,
 	} else if (layer_data->display_buffer_changed) {
 		layer_data->display_buffer_changed = 0;
 
-		if (layer_data->display_buffer) {
+		if (!layer_data->display_buffer) {
+			if (drmModeSetCrtc(drm_data->drm_fd, output_data->crtc_id,
+							   0, 0, 0, NULL, 0, NULL)) {
+				TDM_ERR("unset crtc failed: %m");
+				return TDM_ERROR_OPERATION_FAILED;
+			}
+
+			if (output_data->status == TDM_OUTPUT_CONN_STATUS_MODE_SETTED)
+				_tdm_drm_output_update_status(output_data, TDM_OUTPUT_CONN_STATUS_CONNECTED);
+
+			*do_waitvblank = 1;
+		} else {
 			tdm_drm_event_data *event_data = calloc(1, sizeof(tdm_drm_event_data));
 
 			if (!event_data) {
@@ -331,9 +270,6 @@ _tdm_drm_display_commit_primary_layer(tdm_drm_layer_data *layer_data,
 				return TDM_ERROR_OPERATION_FAILED;
 			}
 			*do_waitvblank = 0;
-		} else {
-			/* to call a user commit handler whenever committed */
-			*do_waitvblank = 1;
 		}
 	}
 
@@ -714,6 +650,44 @@ failed:
 }
 #endif
 
+static void
+_tdm_drm_display_cb_destroy_buffer(tbm_surface_h buffer, void *user_data)
+{
+	tdm_drm_data *drm_data;
+	tdm_drm_display_buffer *display_buffer;
+	int ret;
+
+	if (!user_data) {
+		TDM_ERR("no user_data");
+		return;
+	}
+	if (!buffer) {
+		TDM_ERR("no buffer");
+		return;
+	}
+
+	drm_data = (tdm_drm_data *)user_data;
+
+	display_buffer = _tdm_drm_display_find_buffer(drm_data, buffer);
+	if (!display_buffer) {
+		TDM_ERR("no display_buffer");
+		return;
+	}
+	LIST_DEL(&display_buffer->link);
+
+	if (display_buffer->fb_id > 0) {
+		ret = drmModeRmFB(drm_data->drm_fd, display_buffer->fb_id);
+		if (ret < 0) {
+			TDM_ERR("rm fb failed");
+			return;
+		}
+		TDM_DBG("drmModeRmFB success!!! fb_id:%d", display_buffer->fb_id);
+	} else
+		TDM_DBG("drmModeRmFB not called fb_id:%d", display_buffer->fb_id);
+
+	free(display_buffer);
+}
+
 tdm_error
 tdm_drm_display_create_layer_list(tdm_drm_data *drm_data)
 {
@@ -754,14 +728,23 @@ tdm_drm_display_destroy_output_list(tdm_drm_data *drm_data)
 			tdm_drm_layer_data *l = NULL, *ll = NULL;
 			LIST_FOR_EACH_ENTRY_SAFE(l, ll, &o->layer_list, link) {
 				LIST_DEL(&l->link);
-				if (l->display_buffer)
-					tbm_surface_internal_unref(l->display_buffer->buffer);
 				free(l);
 			}
 		}
 		free(o->drm_modes);
 		free(o->output_modes);
 		free(o);
+	}
+}
+
+void
+tdm_drm_display_destroy_buffer_list(tdm_drm_data *drm_data)
+{
+	tdm_drm_display_buffer *b = NULL, *bb = NULL;
+
+	LIST_FOR_EACH_ENTRY_SAFE(b, bb, &drm_data->buffer_list, link) {
+		tdm_buffer_remove_destroy_handler(b->buffer, _tdm_drm_display_cb_destroy_buffer, drm_data);
+		_tdm_drm_display_cb_destroy_buffer(b->buffer, drm_data);
 	}
 }
 
@@ -1676,24 +1659,71 @@ drm_layer_set_buffer(tdm_layer *layer, tbm_surface_h buffer)
 	tdm_drm_layer_data *layer_data = layer;
 	tdm_drm_data *drm_data;
 	tdm_drm_display_buffer *display_buffer;
+	tdm_error err = TDM_ERROR_NONE;
+	int ret, i, count;
 
 	RETURN_VAL_IF_FAIL(layer_data, TDM_ERROR_INVALID_PARAMETER);
 	RETURN_VAL_IF_FAIL(buffer, TDM_ERROR_INVALID_PARAMETER);
 
 	drm_data = layer_data->drm_data;
 
-	display_buffer = _tdm_drm_display_get_buffer(drm_data, buffer);
+	display_buffer = _tdm_drm_display_find_buffer(drm_data, buffer);
 	if (!display_buffer) {
-		TDM_ERR("alloc failed");
-		return TDM_ERROR_OUT_OF_MEMORY;
+		display_buffer = calloc(1, sizeof(tdm_drm_display_buffer));
+		if (!display_buffer) {
+			TDM_ERR("alloc failed");
+			return TDM_ERROR_OUT_OF_MEMORY;
+		}
+		display_buffer->buffer = buffer;
+
+		err = tdm_buffer_add_destroy_handler(buffer, _tdm_drm_display_cb_destroy_buffer,
+											 drm_data);
+		if (err != TDM_ERROR_NONE) {
+			TDM_ERR("add destroy handler fail");
+			free(display_buffer);
+			return TDM_ERROR_OPERATION_FAILED;
+		}
+
+		LIST_ADDTAIL(&display_buffer->link, &drm_data->buffer_list);
 	}
 
-	if (layer_data->display_buffer)
-		tbm_surface_internal_unref(layer_data->display_buffer->buffer);
+	if (display_buffer->fb_id == 0) {
+		unsigned int width;
+		unsigned int height;
+		unsigned int format;
+		unsigned int handles[4] = {0,};
+		unsigned int pitches[4] = {0,};
+		unsigned int offsets[4] = {0,};
+		unsigned int size;
+
+		width = tbm_surface_get_width(buffer);
+		height = tbm_surface_get_height(buffer);
+		format = tbm_surface_get_format(buffer);
+		count = tbm_surface_internal_get_num_bos(buffer);
+		for (i = 0; i < count; i++) {
+			tbm_bo bo = tbm_surface_internal_get_bo(buffer, i);
+			handles[i] = tbm_bo_get_handle(bo, TBM_DEVICE_DEFAULT).u32;
+		}
+		count = tbm_surface_internal_get_num_planes(format);
+		for (i = 0; i < count; i++)
+			tbm_surface_internal_get_plane_data(buffer, i, &size, &offsets[i], &pitches[i]);
+
+		ret = drmModeAddFB2(drm_data->drm_fd, width, height, format,
+							handles, pitches, offsets, &display_buffer->fb_id, 0);
+		if (ret < 0) {
+			TDM_ERR("add fb failed: %m");
+			return TDM_ERROR_OPERATION_FAILED;
+		}
+		TDM_DBG("drm_data->drm_fd : %d, display_buffer->fb_id:%u", drm_data->drm_fd,
+				display_buffer->fb_id);
+
+		if (IS_RGB(format))
+			display_buffer->width = pitches[0] >> 2;
+		else
+			display_buffer->width = pitches[0];
+	}
 
 	layer_data->display_buffer = display_buffer;
-	tbm_surface_internal_ref(layer_data->display_buffer->buffer);
-
 	layer_data->display_buffer_changed = 1;
 
 	return TDM_ERROR_NONE;
@@ -1706,11 +1736,7 @@ drm_layer_unset_buffer(tdm_layer *layer)
 
 	RETURN_VAL_IF_FAIL(layer_data, TDM_ERROR_INVALID_PARAMETER);
 
-	if (!(layer_data->capabilities & TDM_LAYER_CAPABILITY_PRIMARY) && layer_data->display_buffer) {
-		tbm_surface_internal_unref(layer_data->display_buffer->buffer);
-		layer_data->display_buffer = NULL;
-	}
-
+	layer_data->display_buffer = NULL;
 	layer_data->display_buffer_changed = 1;
 
 	return TDM_ERROR_NONE;
