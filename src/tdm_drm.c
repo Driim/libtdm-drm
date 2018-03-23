@@ -214,7 +214,7 @@ tdm_drm_deinit(tdm_backend_data *bdata)
 #ifdef HAVE_UDEV
 	_tdm_drm_udev_deinit(drm_data);
 #endif
-	tdm_drm_display_destroy_buffer_list(drm_data);
+
 	tdm_drm_display_destroy_output_list(drm_data);
 
 	if (drm_data->plane_res)

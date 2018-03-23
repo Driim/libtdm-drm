@@ -128,6 +128,5 @@ void		tdm_drm_display_update_output_status(tdm_drm_data *drm_data);
 tdm_error	tdm_drm_display_create_output_list(tdm_drm_data *drm_data);
 void		tdm_drm_display_destroy_output_list(tdm_drm_data *drm_data);
 tdm_error	tdm_drm_display_create_layer_list(tdm_drm_data *drm_data);
-void		tdm_drm_display_destroy_buffer_list(tdm_drm_data *drm_data);
 
 #endif /* _TDM_DRM_H_ */
