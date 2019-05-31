@@ -12,7 +12,7 @@
 
 #define ENABLE_PP
 
-#define TDM_DRM_NAME "vigs"
+#define TDM_DRM_NAME "imx-drm"
 
 static tdm_drm_data *drm_data;
 
